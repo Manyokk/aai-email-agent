@@ -14,8 +14,18 @@ def draft_reply(email, triage_result):
         temperature=0.2
     )
     
-    # triage_result is plain text (department name as string)
-    department = str(triage_result)
+    # Extract department from triage_result structure:
+    # {
+    #   "department": "Sales" | "Support" | "Finance" | "NeedsReview",
+    #   "confidence": float,
+    #   "summary": str,
+    #   "tags": list[str]
+    # }
+    if isinstance(triage_result, dict):
+        department = triage_result.get("department", "Unknown")
+    else:
+        # Fallback for plain text (backward compatibility)
+        department = str(triage_result)
     
     # email is plain text (email content as string)
     email_content = str(email)
