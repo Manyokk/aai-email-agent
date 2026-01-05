@@ -1,17 +1,14 @@
 # imports
-from langchain_google_genai import ChatGoogleGenerativeAI 
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
-import os
-from dotenv import load_dotenv
 
 def draft_reply(email, triage_result):
-    # Load environment variables from .env file in the project root
-    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
-    
-    #initializing LLM with low randomness (automatically reads GOOGLE_API_KEY from environment)
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite", 
-        temperature=0.2
+    # Initialize Ollama LLM (connects to local Ollama instance)
+    # Default model is "llama3.2" - change if you have a different model
+    llm = ChatOllama(
+        model="llama3.2",  # Change to your preferred Ollama model (e.g., "llama2", "mistral", "phi3")
+        temperature=0.2,
+        base_url="http://localhost:11434"  # Default Ollama API endpoint
     )
     
     # Extract department from triage_result structure:
@@ -43,4 +40,4 @@ def draft_reply(email, triage_result):
     # Return plain text content from the response
     return response.content
 
-print(draft_reply("Dear IKEA Team, what is my income?", "Sales"))
+#print(draft_reply("Dear IKEA Team, what is my income?", "Sales"))
