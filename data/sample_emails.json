@@ -1,0 +1,26 @@
+[
+    {"id":"e01","from":"mila@acme.com","subject":"TRIAG3 pricing for 80 users","body":"Hi TRIAG3 team,\nWe need pricing for ~80 users and onboarding timeline. Can we schedule a demo next week?\nThanks,\nMila"},
+    {"id":"e02","from":"procurement@northwind.io","subject":"Request for proposal (RFP)","body":"Hello,\nPlease share your RFP response template, security documentation, and SLA options.\nRegards,\nNorthwind Procurement"},
+    {"id":"e03","from":"liam@startup.dev","subject":"Discount for students/non-profit?","body":"Hi,\nDo you offer any discounts for student teams or non-profit orgs?\nBest regards,\nLiam"},
+    {"id":"e04","from":"it@globex.com","subject":"SSO / SAML support question","body":"Hi,\nDo you support SSO (SAML/SCIM)? If yes, which identity providers are supported?\n--\nGlobex IT"},
+    {"id":"e05","from":"saleslead@umbrella.org","subject":"Need trial access","body":"Can you enable a 14-day trial for our team? We want to test routing accuracy.\nThanks."},
+    {"id":"e06","from":"ceo@tinyco.ai","subject":"Enterprise plan + dedicated support","body":"We are evaluating TRIAG3 for enterprise. Do you have dedicated support and uptime guarantees?\nRegards,\nCEO"},
+  
+    {"id":"e07","from":"user1@client.com","subject":"Login error 403","body":"Hi Support,\nSince yesterday we get 403 when logging in. It happens for multiple users.\nPlease advise."},
+    {"id":"e08","from":"ops@client.com","subject":"System is slow after latest update","body":"Hello,\nThe dashboard is very slow today. Pages load in 20-30 seconds.\nCan you check?\nThanks."},
+    {"id":"e09","from":"dev@client.com","subject":"Webhook not firing","body":"Hi,\nOur webhook events stopped firing around 09:40 UTC. No changes on our side.\nCan you investigate?"},
+    {"id":"e10","from":"admin@client.com","subject":"Cannot reset password","body":"I click reset password but never receive an email.\nPlease help."},
+    {"id":"e11","from":"qa@client.com","subject":"Bug: exported CSV columns wrong","body":"The CSV export columns are shifted. Column headers do not match values.\nSteps: open reports -> export CSV."},
+    {"id":"e12","from":"security@client.com","subject":"Possible account compromise","body":"We see suspicious login attempts from unknown IPs. Can you help us lock the account and audit access?\nRegards,\nSecurity Team"},
+  
+    {"id":"e13","from":"billing@vendor.com","subject":"Invoice INV-2025-104 payment status","body":"Hello,\nCan you confirm payment status for invoice INV-2025-104?\nThank you."},
+    {"id":"e14","from":"accounts@client.com","subject":"Update billing address","body":"Hi,\nWe need to update our billing address on file for future invoices.\nThanks."},
+    {"id":"e15","from":"finance@client.com","subject":"Refund request for duplicate charge","body":"We were charged twice this month. Please refund the duplicate charge.\nOrder ref: 88312."},
+    {"id":"e16","from":"ap@client.com","subject":"W-9 / tax documents","body":"Could you provide your W-9/tax documents for our vendor setup?\nRegards,\nAccounts Payable"},
+  
+    {"id":"e17","from":"unknown@randommail.com","subject":"Hello","body":"Hi there.\n"},
+    {"id":"e18","from":"partner@ally.com","subject":"Partnership discussion","body":"We'd like to discuss a partnership and co-marketing opportunities.\nWho should we talk to?"},
+    {"id":"e19","from":"hr@client.com","subject":"Candidate reference check","body":"This is an HR reference check request. Please confirm employment dates for a former employee.\nThanks."},
+    {"id":"e20","from":"noreply@service.com","subject":"FWD: customer complaint escalated","body":"Forwarding customer complaint.\nOn Tue someone wrote:\nPrevious email thread content...\n--\nAuto-forwarder"}
+  ]
+  
