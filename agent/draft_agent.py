@@ -1,79 +1,43 @@
-from __future__ import annotations
+# imports
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage, SystemMessage
 
-from typing import Any, Dict
-
-
-def draft_reply(email: Dict[str, Any], triage_result: Dict[str, Any]) -> Dict[str, str]:
-    """
-    Generate an INTERNAL draft reply for employees (not customer-facing).
-
-    Input:
-      email: {id, from, subject, body}
-      triage_result: {department, confidence, summary, tags?}
-
-    Output:
-      {"draft_reply": "<text>"}
-    """
-    dept = str(triage_result.get("department") or "NeedsReview")
-    conf = triage_result.get("confidence")
-    summary = str(triage_result.get("summary") or "").strip()
-    tags = triage_result.get("tags") or []
-    if not isinstance(tags, list):
-        tags = []
-
-    sender = str(email.get("from") or "").strip()
-    subject = str(email.get("subject") or "").strip()
-    body = str(email.get("body") or "").strip()
-
-    # Common header for internal note
-    header = (
-        "INTERNAL DRAFT (TRIAG3)\n"
-        "Do NOT send to customer as-is. Use as a starting point.\n\n"
-        f"Department: {dept}\n"
-        f"Confidence: {conf}\n"
-        f"Tags: {', '.join(map(str, tags)) if tags else 'None'}\n"
-        f"From: {sender}\n"
-        f"Subject: {subject}\n"
+def draft_reply(email, triage_result):
+    # Initialize Ollama LLM (connects to local Ollama instance)
+    # Default model is "llama3.2" - change if you have a different model
+    llm = ChatOllama(
+        model="llama3.2",  # Change to your preferred Ollama model (e.g., "llama2", "mistral", "phi3")
+        temperature=0.2,
+        base_url="http://localhost:11434"  # Default Ollama API endpoint
     )
-    if summary:
-        header += f"Summary: {summary}\n"
-    header += "\n"
-
-    # Department-specific suggested actions
-    if dept.lower() == "sales":
-        actions = (
-            "Suggested actions:\n"
-            "- Confirm the customer's use case and expected user count.\n"
-            "- Share pricing tiers and propose a demo call.\n"
-            "- Ask about SSO/security requirements if enterprise.\n\n"
-        )
-    elif dept.lower() == "support":
-        actions = (
-            "Suggested actions:\n"
-            "- Request timestamps, affected users, and error screenshots/logs.\n"
-            "- Check service status and recent deployments.\n"
-            "- Provide workaround if available; escalate if reproducible.\n\n"
-        )
-    elif dept.lower() == "finance":
-        actions = (
-            "Suggested actions:\n"
-            "- Locate invoice/order reference and verify payment status.\n"
-            "- Confirm billing address/legal entity if changes are requested.\n"
-            "- If duplicate charge: validate transactions and initiate refund flow.\n\n"
-        )
+    
+    # Extract department from triage_result structure:
+    # {
+    #   "department": "Sales" | "Support" | "Finance" | "NeedsReview",
+    #   "confidence": float,
+    #   "summary": str,
+    #   "tags": list[str]
+    # }
+    if isinstance(triage_result, dict):
+        department = triage_result.get("department", "Unknown")
     else:
-        actions = (
-            "Suggested actions:\n"
-            "- Needs manual review to determine correct owner/team.\n"
-            "- Identify missing context; request clarification if needed.\n\n"
-        )
+        # Fallback for plain text (backward compatibility)
+        department = str(triage_result)
+    
+    # email is plain text (email content as string)
+    email_content = str(email)
+    
+    # Create prompt with proper string formatting
+    draft_prompt = f"Our Company name is TRIAG3. Create an answer to the email from the customer. Use the following Department this email is directed to: {department}"
+    
+    messages = [
+        SystemMessage(content=draft_prompt),
+        HumanMessage(content=email_content)
+    ]
+    
+    #llm call
+    response = llm.invoke(messages)
+    # Return plain text content from the response
+    return response.content
 
-    # Include the customer message as context for internal team
-    context = (
-        "Customer message (context):\n"
-        "--------------------------\n"
-        f"{body}\n"
-    )
-
-    return {"draft_reply": header + actions + context}
 #newcode
