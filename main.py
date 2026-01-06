@@ -1,75 +1,61 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
+import os
+from typing import Any, Dict, List
 
 from ingestion.loader import load_emails
-from ingestion.preprocess import preprocess_email
-from agent.triage_agent import triage
-from agent.draft_agent import draft_reply
 from routing.router import route
 
-
-def _ensure_project_root() -> None:
-    """
-    Make sure script is run from the project root (where main.py sits),
-    so relative paths like data/sample_emails.json work.
-    """
-    root = Path(__file__).resolve().parent
-    try:
-        import os
-        os.chdir(root)
-    except Exception:
-        pass
+from agent.graph import build_graph
 
 
-def main() -> int:
-    _ensure_project_root()
+def main() -> None:
+    data_path = os.getenv("AAI_EMAIL_DATA", "data/sample_emails.json")
+    max_revs = int(os.getenv("AAI_MAX_REVISIONS", "2"))
 
-    data_path = "data/sample_emails.json"
+    emails: List[Dict[str, Any]] = load_emails(data_path)
+    print(f"[INFO] Loaded {len(emails)} raw emails from {data_path}")
 
-    try:
-        raw_emails = load_emails(data_path)
-    except Exception as e:
-        print(f"[FATAL] Failed to load emails from '{data_path}': {e}")
-        return 1
+    graph = build_graph()
 
-    if not isinstance(raw_emails, list) or len(raw_emails) == 0:
-        print("[FATAL] No emails found (sample_emails.json is empty or invalid).")
-        return 1
+    for i, email in enumerate(emails, start=1):
+        email_id = email.get("id") or email.get("email_id") or f"email_{i:03d}"
 
-    ok, failed = 0, 0
-    print(f"[INFO] Loaded {len(raw_emails)} raw emails from {data_path}")
+        state = {
+            "email": email,
+            "max_revisions": max_revs,
+            "revision_count": 0,
+            "feedback": None,
+            "errors": [],
+            "memory_notes": [],
+        }
 
-    for idx, raw in enumerate(raw_emails, start=1):
         try:
-            email = preprocess_email(raw)
+            final_state = graph.invoke(state)
 
-            triage_result = triage(email)
-            draft_result = draft_reply(email, triage_result)
+            triage_result = {
+                "department": final_state.get("department", "NeedsReview"),
+                "confidence": float(final_state.get("confidence", 0.0)),
+                "summary": final_state.get("summary", ""),
+                "tags": final_state.get("tags", []),
+            }
 
-            out_file = route(email, triage_result, draft_result)
+            draft_text = final_state.get("draft", "")
 
-            dept = triage_result.get("department", "Unknown")
-            conf = triage_result.get("confidence", None)
-            conf_str = f"{conf:.2f}" if isinstance(conf, (int, float)) else "n/a"
+            out_path = route(email, triage_result, draft_text)
 
-            print(f"[OK] ({idx}/{len(raw_emails)}) {email.get('id')} -> {dept} (conf={conf_str}) -> {out_file}")
-            ok += 1
+            print(
+                f"[OK] ({i}/{len(emails)}) {email_id} -> "
+                f"{triage_result['department']} (conf={triage_result['confidence']:.2f}) -> {out_path}"
+            )
+
+            errs = final_state.get("errors") or []
+            if errs:
+                print(f"[WARN] {email_id}: " + " | ".join(errs))
 
         except Exception as e:
-            failed += 1
-            eid = None
-            try:
-                eid = raw.get("id")
-            except Exception:
-                pass
-            print(f"[FAIL] ({idx}/{len(raw_emails)}) id={eid} error={e}")
-
-    print(f"[DONE] success={ok} failed={failed}")
-
-    return 0 if failed == 0 else 2
+            print(f"[ERR] ({i}/{len(emails)}) {email_id} failed: {e}")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
