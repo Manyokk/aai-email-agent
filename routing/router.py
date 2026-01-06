@@ -18,7 +18,7 @@ def _safe_department(name: Any) -> str:
     return dept if dept else "NeedsReview"
 
 
-def route(email: Dict[str, Any], triage_result: Dict[str, Any], draft_result: Dict[str, Any]) -> str:
+def route(email: Dict[str, Any], triage_result: Dict[str, Any], draft_result: Any) -> str:
     """
     Create a ticket JSON file and save it into outputs/<department>/.
 
@@ -33,6 +33,12 @@ def route(email: Dict[str, Any], triage_result: Dict[str, Any], draft_result: Di
     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     ticket_id = f"{email_id}_{ts}"
 
+    # Support both simple string draft results and dict-style results
+    if isinstance(draft_result, str):
+        draft_text = draft_result
+    else:
+        draft_text = (draft_result or {}).get("draft_reply")
+
     ticket = {
         "ticket_id": ticket_id,
         "created_at": _utc_now_iso(),
@@ -42,7 +48,7 @@ def route(email: Dict[str, Any], triage_result: Dict[str, Any], draft_result: Di
         "subject": email.get("subject"),
         "summary": triage_result.get("summary"),
         "tags": triage_result.get("tags", []),
-        "draft_reply": draft_result.get("draft_reply"),
+        "draft_reply": draft_text,
         "raw_body": email.get("body"),
     }
 
