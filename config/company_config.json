@@ -1,0 +1,66 @@
+{
+    "company": {
+      "name": "Example GmbH",
+      "primary_domain": "example.com",
+      "default_tone": "professional, concise, helpful"
+    },
+  
+    "departments": [
+      {
+        "id": "support",
+        "name": "Support",
+        "tone": "empathetic, helpful, step-by-step"
+      },
+      {
+        "id": "sales",
+        "name": "Sales",
+        "tone": "friendly, concise, confident"
+      },
+      {
+        "id": "billing",
+        "name": "Billing",
+        "tone": "formal, precise, compliance-focused"
+      }
+    ],
+  
+    "inbox_aliases": [
+      { "address": "support@example.com", "department_id": "support" },
+      { "address": "sales@example.com", "department_id": "sales" },
+      { "address": "billing@example.com", "department_id": "billing" }
+    ],
+  
+    "employees": [
+      {
+        "email": "sarah@example.com",
+        "name": "Sarah Müller",
+        "department_ids": ["support"],
+        "signature": "Sarah Müller\nCustomer Support – ACME GmbH"
+      },
+      {
+        "email": "tom@example.com",
+        "name": "Tom Becker",
+        "department_ids": ["sales"],
+        "signature": "Tom Becker\nSales – ACME GmbH"
+      },
+      {
+        "email": "lina@example.com",
+        "name": "Lina Weber",
+        "department_ids": ["billing"],
+        "signature": "Lina Weber\nBilling – Example GmbH"
+      }
+    ],
+  
+    "assignment": {
+      "strategy": "round_robin",
+      "fallback_employee_email": "sarah@example.com"
+    },
+  
+    "routing_rules": {
+      "keyword_to_department": [
+        { "keywords": ["refund", "invoice", "payment", "charge"], "department_id": "billing" },
+        { "keywords": ["bug", "error", "login", "password", "not working"], "department_id": "support" },
+        { "keywords": ["pricing", "quote", "demo", "contract"], "department_id": "sales" }
+      ]
+    }
+  }
+  

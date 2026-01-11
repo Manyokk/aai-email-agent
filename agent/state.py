@@ -4,28 +4,29 @@ from typing import TypedDict, Optional, List, Dict, Any
 
 
 class EmailState(TypedDict, total=False):
-    # Input
     email: Dict[str, Any]
 
-    # Memory (persistent)
-    memory_path: str
-    memory: Dict[str, Any]
-    used_sender_override: bool
+    # Company config
+    config_path: str
+    config: Dict[str, Any]
 
-    # Triage
-    department: str
+    # Routing result (company-defined)
+    department_id: str
     confidence: float
-    summary: str
-    tags: List[str]
+
+    # Assignment
+    owner_email: str
+    signature: str
+    tone: Optional[str]
 
     # Drafting
     draft: str
-    tone: Optional[str]
 
-    # Human-in-the-loop
+    # Chat loop
     feedback: Optional[str]
     revision_count: int
     max_revisions: int
+    approved: bool
+    skipped: bool
 
-    # Control / logging
     errors: List[str]

@@ -1,12 +1,54 @@
 {
   "sender_department": {
-    "unknown@randommail.com": "& c:/Users/arsha/aai-email-agent/.venv/Scripts/python.exe c:/Users/arsha/aai-email-agent/main.py",
     "mila@acme.com": "Sales"
   },
+  "sender_owner": {},
   "department_tone": {
     "Sales": "friendly, concise, confident",
     "Support": "empathetic, helpful, step-by-step",
     "Finance": "formal, precise, compliance-focused",
     "NeedsReview": "neutral, ask clarifying questions"
+  },
+  "department_owners": {
+    "Sales": [
+      "sales1@triag3.com"
+    ],
+    "Support": [
+      "support1@triag3.com"
+    ],
+    "Finance": [
+      "finance1@triag3.com"
+    ],
+    "NeedsReview": [
+      "ops@triag3.com"
+    ]
+  },
+  "rr_index": {
+    "Sales": 0,
+    "Support": 0,
+    "Finance": 0,
+    "NeedsReview": 0
+  },
+  "employees": {
+    "sales1@triag3.com": {
+      "name": "Ege Dikmen",
+      "title": "Sales",
+      "signature": "Sales Agent\nSales – TRIAG3"
+    },
+    "support1@triag3.com": {
+      "name": "Hendrick ",
+      "title": "Support",
+      "signature": "Support Agent\nSupport – TRIAG3"
+    },
+    "finance1@triag3.com": {
+      "name": "Arsham Kuhnavardasli",
+      "title": "Finance",
+      "signature": "Finance Agent\nFinance – TRIAG3"
+    },
+    "ops@triag3.com": {
+      "name": "Operations",
+      "title": "Ops",
+      "signature": "Operations\nTRIAG3"
+    }
   }
 }
