@@ -7,6 +7,11 @@ class EmailState(TypedDict, total=False):
     # Input
     email: Dict[str, Any]
 
+    # Memory (persistent)
+    memory_path: str
+    memory: Dict[str, Any]
+    used_sender_override: bool
+
     # Triage
     department: str
     confidence: float
@@ -15,6 +20,7 @@ class EmailState(TypedDict, total=False):
 
     # Drafting
     draft: str
+    tone: Optional[str]
 
     # Human-in-the-loop
     feedback: Optional[str]
@@ -23,6 +29,3 @@ class EmailState(TypedDict, total=False):
 
     # Control / logging
     errors: List[str]
-
-    # Memory hooks (simple placeholder for now)
-    memory_notes: List[str]

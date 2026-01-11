@@ -11,6 +11,7 @@ from agent.graph import build_graph
 
 def main() -> None:
     data_path = os.getenv("AAI_EMAIL_DATA", "data/sample_emails.json")
+    memory_path = os.getenv("AAI_MEMORY_PATH", "memory/memory_store.json")
     max_revs = int(os.getenv("AAI_MAX_REVISIONS", "2"))
 
     emails: List[Dict[str, Any]] = load_emails(data_path)
@@ -23,11 +24,11 @@ def main() -> None:
 
         state = {
             "email": email,
+            "memory_path": memory_path,
             "max_revisions": max_revs,
             "revision_count": 0,
             "feedback": None,
             "errors": [],
-            "memory_notes": [],
         }
 
         try:

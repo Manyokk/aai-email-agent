@@ -1,0 +1,12 @@
+{
+  "sender_department": {
+    "unknown@randommail.com": "& c:/Users/arsha/aai-email-agent/.venv/Scripts/python.exe c:/Users/arsha/aai-email-agent/main.py",
+    "mila@acme.com": "Sales"
+  },
+  "department_tone": {
+    "Sales": "friendly, concise, confident",
+    "Support": "empathetic, helpful, step-by-step",
+    "Finance": "formal, precise, compliance-focused",
+    "NeedsReview": "neutral, ask clarifying questions"
+  }
+}
