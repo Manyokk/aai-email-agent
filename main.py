@@ -69,22 +69,17 @@ def main() -> None:
         try:
             final_state = graph.invoke(state)
 
-            dept_id = (final_state.get("department_id") or "needs_review").strip()
+            dept_id = (final_state.get("department_id") or "needs_review").strip().lower()
+            if not dept_id:
+                dept_id = "needs_review"
+
             dept_counts[dept_id] += 1
 
-            # Keep compatibility with existing routing/router.py folder structure
-            dept_name_map = {
-                "sales": "Sales",
-                "support": "Support",
-                "billing": "Finance",
-                "finance": "Finance",
-                "needs_review": "NeedsReview",
-                "needsreview": "NeedsReview",
-            }
-            department_for_output = dept_name_map.get(dept_id.lower(), "NeedsReview")
+            dept_label = dept_map.get(dept_id, dept_id)
 
             triage_result = {
-                "department": department_for_output,
+                # IMPORTANT: use dept_id directly so router creates outputs/<dept_id>/
+                "department": dept_id,
                 "confidence": float(final_state.get("confidence", 0.0)),
                 "summary": final_state.get("summary", ""),
                 "tags": final_state.get("tags", []),
@@ -95,7 +90,7 @@ def main() -> None:
 
             print(
                 f"[OK] ({i}/{len(emails)}) {email_id} -> "
-                f"{department_for_output} (conf={triage_result['confidence']:.2f}) -> {out_path}"
+                f"{dept_label} (conf={triage_result['confidence']:.2f}) -> {out_path}"
             )
 
             errs = final_state.get("errors") or []

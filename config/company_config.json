@@ -1,66 +1,116 @@
 {
-    "company": {
-      "name": "Example GmbH",
-      "primary_domain": "example.com",
-      "default_tone": "professional, concise, helpful"
+  "company": {
+    "name": "Example Company Ltd.",
+    "primary_domain": "example.com",
+    "default_tone": "professional, concise, helpful"
+  },
+
+  "departments": [
+    {
+      "id": "sales",
+      "name": "Sales",
+      "tone": "friendly, confident, concise"
     },
-  
-    "departments": [
-      {
-        "id": "support",
-        "name": "Support",
-        "tone": "empathetic, helpful, step-by-step"
-      },
-      {
-        "id": "sales",
-        "name": "Sales",
-        "tone": "friendly, concise, confident"
-      },
-      {
-        "id": "billing",
-        "name": "Billing",
-        "tone": "formal, precise, compliance-focused"
-      }
-    ],
-  
-    "inbox_aliases": [
-      { "address": "support@example.com", "department_id": "support" },
-      { "address": "sales@example.com", "department_id": "sales" },
-      { "address": "billing@example.com", "department_id": "billing" }
-    ],
-  
-    "employees": [
-      {
-        "email": "sarah@example.com",
-        "name": "Sarah Müller",
-        "department_ids": ["support"],
-        "signature": "Sarah Müller\nCustomer Support – ACME GmbH"
-      },
-      {
-        "email": "tom@example.com",
-        "name": "Tom Becker",
-        "department_ids": ["sales"],
-        "signature": "Tom Becker\nSales – ACME GmbH"
-      },
-      {
-        "email": "lina@example.com",
-        "name": "Lina Weber",
-        "department_ids": ["billing"],
-        "signature": "Lina Weber\nBilling – Example GmbH"
-      }
-    ],
-  
-    "assignment": {
-      "strategy": "round_robin",
-      "fallback_employee_email": "sarah@example.com"
+    {
+      "id": "support",
+      "name": "Customer Support",
+      "tone": "empathetic, helpful, step-by-step"
     },
-  
-    "routing_rules": {
-      "keyword_to_department": [
-        { "keywords": ["refund", "invoice", "payment", "charge"], "department_id": "billing" },
-        { "keywords": ["bug", "error", "login", "password", "not working"], "department_id": "support" },
-        { "keywords": ["pricing", "quote", "demo", "contract"], "department_id": "sales" }
+    {
+      "id": "billing",
+      "name": "Billing",
+      "tone": "formal, precise, compliance-focused"
+    }
+  ],
+
+  "inbox_aliases": [
+    { "address": "sales@example.com", "department_id": "sales" },
+    { "address": "support@example.com", "department_id": "support" },
+    { "address": "billing@example.com", "department_id": "billing" }
+  ],
+
+  "employees": [
+    {
+      "email": "alex.meyer@example.com",
+      "name": "Alex Meyer",
+      "department_ids": ["sales"],
+      "signature": "Alex Meyer\nSales Team\nExample Company Ltd."
+    },
+    {
+      "email": "julia.rossi@example.com",
+      "name": "Julia Rossi",
+      "department_ids": ["support"],
+      "signature": "Julia Rossi\nCustomer Support\nExample Company Ltd."
+    },
+    {
+      "email": "daniel.klein@example.com",
+      "name": "Daniel Klein",
+      "department_ids": ["billing"],
+      "signature": "Daniel Klein\nBilling Department\nExample Company Ltd."
+    }
+  ],
+
+  "assignment": {
+    "strategy": "round_robin",
+    "fallback_employee_email": "julia.rossi@example.com"
+  },
+
+ "routing_rules": {
+  "keyword_to_department": [
+    {
+      "department_id": "sales",
+      "keywords": [
+        "price", "pricing", "cost", "costs", "quote", "quotation", "proposal",
+        "demo", "trial", "free trial", "pilot",
+        "contract", "agreement", "terms", "conditions",
+        "license", "licensing", "subscription", "plan", "plans",
+        "upgrade", "downgrade", "enterprise", "custom plan",
+        "discount", "bulk", "volume", "users", "seats",
+        "purchase", "buy", "buying", "order",
+        "sales", "partnership", "partner", "reseller",
+        "rfp", "rfi", "tender",
+        "onboarding", "implementation", "rollout",
+        "meeting", "call", "presentation", "pitch"
+      ]
+    },
+    {
+      "department_id": "support",
+      "keywords": [
+        "help", "support", "assist", "assistance",
+        "issue", "problem", "bug", "error", "failure", "crash",
+        "not working", "doesn't work", "cant login", "cannot login",
+        "login", "signin", "sign in", "password", "reset password",
+        "access", "permission", "authorization", "authentication",
+        "timeout", "slow", "latency", "performance",
+        "broken", "fix", "troubleshoot", "debug",
+        "install", "installation", "setup", "configuration", "config",
+        "how do i", "how to", "guide", "instructions",
+        "api error", "endpoint", "integration issue",
+        "update failed", "version", "upgrade issue",
+        "incident", "outage", "downtime"
+      ]
+    },
+    {
+      "department_id": "billing",
+      "keywords": [
+        "invoice", "invoices", "billing", "bill",
+        "payment", "payments", "paid", "unpaid",
+        "charge", "charged", "charges",
+        "refund", "refunds", "refund request",
+        "credit", "credit note", "debit",
+        "receipt", "receipts",
+        "vat", "tax", "taxes",
+        "bank transfer", "wire transfer", "iban",
+        "paypal", "credit card", "card charged",
+        "overcharged", "double charged",
+        "billing address", "company address",
+        "late payment", "payment failed",
+        "balance", "outstanding balance",
+        "accounting", "finance"
       ]
     }
-  }
-  
+  ]
+}
+}
+
+

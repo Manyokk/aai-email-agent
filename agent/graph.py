@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import os
 import re
-from typing import Dict, Any, Literal
+from typing import Any, Dict, Literal
 
 from langgraph.graph import StateGraph, END
-
 from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -21,7 +21,7 @@ from config.loader import (
 
 
 # ----------------------------
-# Helpers: routing + assignment
+# Helpers
 # ----------------------------
 
 def _get_to_addresses(email: Dict[str, Any]) -> str:
@@ -37,7 +37,7 @@ def llm_route_department(cfg: Dict[str, Any], email: Dict[str, Any]) -> Dict[str
         for d in (cfg.get("departments", []) or [])
         if isinstance(d, dict) and d.get("id")
     ]
-    dept_ids = [d.strip() for d in dept_ids if d and d.strip()]
+    dept_ids = [d.strip().lower() for d in dept_ids if d and d.strip()]
     if not dept_ids:
         return {"department_id": "needs_review", "confidence": 0.40}
 
@@ -46,110 +46,90 @@ def llm_route_department(cfg: Dict[str, Any], email: Dict[str, Any]) -> Dict[str
     subject = str(email.get("subject") or "")
     body = str(email.get("body") or email.get("text") or "")
     sender = str(email.get("from") or email.get("sender") or "")
-    to_line = str(_get_to_addresses(email) or "")
+    to_line = _get_to_addresses(email)
 
     blob = f"FROM: {sender}\nTO: {to_line}\nSUBJECT: {subject}\nBODY:\n{body}"
 
     system = (
-        "You are an email routing classifier for ONE company.\n"
-        "Choose the best department_id from the ALLOWED LIST.\n"
-        "Return ONLY the department_id. No extra words.\n\n"
-        f"ALLOWED LIST: {allowed}\n"
+        "You route incoming emails to a department for ONE company.\n"
+        "Return ONLY the best department_id from the allowed list. No extra words.\n\n"
+        f"ALLOWED: {allowed}\n"
     )
 
     try:
         llm = ChatOllama(
-            model="llama3.2",
+            model=os.getenv("AAI_ROUTER_MODEL", "llama3.2"),
             temperature=0.0,
-            base_url="http://localhost:11434",
+            base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         )
         resp = llm.invoke([SystemMessage(content=system), HumanMessage(content=blob)])
         raw = (resp.content or "").strip().strip('"').strip("'").lower()
 
-        allowed_lower = {a.lower() for a in allowed}
-        if raw in allowed_lower:
+        if raw in allowed:
             conf = 0.65 if raw != "needs_review" else 0.45
             return {"department_id": raw, "confidence": conf}
 
         return {"department_id": "needs_review", "confidence": 0.45}
-
     except Exception:
         return {"department_id": "needs_review", "confidence": 0.40}
 
 
 def route_department(cfg: Dict[str, Any], email: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Priority:
-    1) Alias routing
-    2) Keyword routing
-    3) LLM fallback routing
-    4) needs_review
-    """
-    dept_map = alias_to_department(cfg)
-    dept_names = dept_id_to_name(cfg)
-
     # 1) Alias routing
+    dept_map = alias_to_department(cfg)
     to_text = _get_to_addresses(email).lower()
-    for addr, dep_id in dept_map.items():
-        if addr in to_text:
-            return {"department_id": dep_id, "confidence": 0.95}
+    for addr, dep_id in (dept_map or {}).items():
+        if str(addr).lower() in to_text:
+            return {"department_id": str(dep_id).lower(), "confidence": 0.95}
 
     # 2) Keyword routing
     body = (email.get("body") or email.get("text") or "").lower()
     subject = (email.get("subject") or "").lower()
     blob = subject + "\n" + body
 
-    for rule in (cfg.get("routing_rules", {}) or {}).get("keyword_to_department", []):
+    rules = (cfg.get("routing_rules", {}) or {}).get("keyword_to_department", []) or []
+    for rule in rules:
         if not isinstance(rule, dict):
             continue
-        dep_id = rule.get("department_id")
-        kws = rule.get("keywords") or []
-        if not dep_id or not isinstance(kws, list):
+        dep_id = str(rule.get("department_id") or "").strip().lower()
+        if not dep_id:
             continue
-        for kw in kws:
-            kw_s = str(kw).lower().strip()
+        for kw in (rule.get("keywords") or []):
+            kw_s = str(kw).strip().lower()
             if kw_s and kw_s in blob:
-                return {"department_id": str(dep_id), "confidence": 0.75}
+                return {"department_id": dep_id, "confidence": 0.75}
 
-    # 3) LLM fallback routing
-    if dept_names:
-        return llm_route_department(cfg, email)
-
-    # 4) Fallback
-    return {"department_id": "needs_review", "confidence": 0.40}
-
-
-def _signature_for(cfg: Dict[str, Any], email: str) -> str:
-    e = (email or "").strip().lower()
-    for emp in cfg.get("employees", []) or []:
-        if isinstance(emp, dict) and (emp.get("email") or "").strip().lower() == e:
-            return str(emp.get("signature") or "").strip()
-    return ""
+    # 3) LLM fallback
+    return llm_route_department(cfg, email)
 
 
 def assign_owner(cfg: Dict[str, Any], dept_id: str, rr_state: Dict[str, int]) -> Dict[str, str]:
-    emps_by_dep = employees_by_department(cfg)
+    emps_by_dep = employees_by_department(cfg) or {}
     candidates = emps_by_dep.get(dept_id, []) or []
 
-    fb = fallback_employee_email(cfg)
+    # Fallback employee
+    fb = (fallback_employee_email(cfg) or "").strip().lower()
 
     if not candidates:
+        # Try fallback employee details from cfg["employees"]
         if fb:
-            return {"owner_email": fb, "signature": _signature_for(cfg, fb)}
-        emps = cfg.get("employees", []) or []
-        if emps:
-            e0 = emps[0]
-            email = (e0.get("email") or "").strip().lower()
-            return {"owner_email": email, "signature": _signature_for(cfg, email)}
+            for emp in (cfg.get("employees") or []):
+                if str(emp.get("email", "")).strip().lower() == fb:
+                    return {
+                        "owner_email": fb,
+                        "signature": str(emp.get("signature") or "").strip(),
+                    }
+            return {"owner_email": fb, "signature": ""}
         return {"owner_email": "", "signature": ""}
 
     idx = int(rr_state.get(dept_id, 0))
     chosen = candidates[idx % len(candidates)]
     rr_state[dept_id] = (idx + 1) % len(candidates)
 
-    owner = (chosen.get("email") or "").strip().lower()
-    sig = str(chosen.get("signature") or "").strip()
-    return {"owner_email": owner, "signature": sig}
+    return {
+        "owner_email": str(chosen.get("email") or "").strip().lower(),
+        "signature": str(chosen.get("signature") or "").strip(),
+    }
 
 
 # ----------------------------
@@ -161,12 +141,15 @@ def node_load_config(state: EmailState) -> EmailState:
     state["config_path"] = path
     state["config"] = load_company_config(path)
 
+    # Defaults (safe)
     state.setdefault("errors", [])
     state.setdefault("revision_count", 0)
-    state.setdefault("max_revisions", 3)
+    state.setdefault("max_revisions", int(state.get("max_revisions", 3) or 3))
     state.setdefault("approved", False)
     state.setdefault("skipped", False)
+    state.setdefault("feedback", None)
 
+    # IMPORTANT: internal rr state
     state.setdefault("_rr_state", {})
     return state
 
@@ -176,51 +159,60 @@ def node_route_and_assign(state: EmailState) -> EmailState:
     email = state["email"]
 
     routed = route_department(cfg, email)
-    state["department_id"] = routed["department_id"]
-    state["confidence"] = float(routed["confidence"])
+    dept_id = str(routed.get("department_id") or "needs_review").strip().lower() or "needs_review"
 
-    tones = dept_id_to_tone(cfg)
-    default_tone = (cfg.get("company", {}) or {}).get("default_tone")
-    state["tone"] = tones.get(state["department_id"]) or (str(default_tone).strip() if default_tone else None)
+    state["department_id"] = dept_id
+    state["confidence"] = float(routed.get("confidence") or 0.0)
 
-    rr_state = state.get("_rr_state") or {}
-    assigned = assign_owner(cfg, state["department_id"], rr_state)
+    tones = dept_id_to_tone(cfg) or {}
+    default_tone = ((cfg.get("company") or {}).get("default_tone") or "").strip()
+    state["tone"] = tones.get(dept_id) or (default_tone if default_tone else None)
+
+    rr_state = state.get("_rr_state", {}) or {}
+    assigned = assign_owner(cfg, dept_id, rr_state)
+
     state["_rr_state"] = rr_state
     state["owner_email"] = assigned.get("owner_email", "")
     state["signature"] = assigned.get("signature", "")
-
     return state
 
 
 def node_draft(state: EmailState) -> EmailState:
     cfg = state["config"]
-    dept_names = dept_id_to_name(cfg)
+    dept_names = dept_id_to_name(cfg) or {}
     dept_name = dept_names.get(state.get("department_id", ""), state.get("department_id", "needs_review"))
 
     email = dict(state["email"])
     tone = state.get("tone")
     sig = state.get("signature")
 
+    # Inject constraints into the email body so draft_agent can follow them
     constraints = []
+    constraints.append(f"DEPARTMENT: {dept_name}")
     if tone:
         constraints.append(f"TONE: {tone}")
-    constraints.append(f"DEPARTMENT: {dept_name}")
     if state.get("owner_email"):
         constraints.append(f"RESPONDER: {state['owner_email']}")
     if sig:
         constraints.append("SIGNATURE (use exactly at end):\n" + sig)
 
-    email["body"] = (email.get("body", "") + "\n\n---\n" + "\n\n".join(constraints) + "\n")
+    email["body"] = (email.get("body") or "") + "\n\n---\n" + "\n\n".join(constraints) + "\n"
 
-    triage_result = {"department": dept_name, "confidence": state.get("confidence", 0.0)}
-    state["draft"] = draft_reply(email, triage_result)
+    # draft_reply signature: draft_reply(email, triage_result)
+    state["draft"] = draft_reply(email, {"department": dept_name, "confidence": state.get("confidence", 0.0)})
     return state
 
 
 def node_chat_review(state: EmailState) -> EmailState:
+    interactive = os.getenv("AAI_INTERACTIVE", "1").strip().lower() not in {"0", "false", "no"}
+
+    if not interactive:
+        state["approved"] = True
+        return state
+
     email = state["email"]
     cfg = state["config"]
-    dept_names = dept_id_to_name(cfg)
+    dept_names = dept_id_to_name(cfg) or {}
     dept_name = dept_names.get(state.get("department_id", ""), state.get("department_id", "needs_review"))
 
     sender = email.get("from") or email.get("sender") or "(unknown sender)"
@@ -234,8 +226,11 @@ def node_chat_review(state: EmailState) -> EmailState:
     print(state.get("draft", ""))
     print("-" * 90)
 
-    print("Commands: approve/a | skip/s | help")
-    print("Anything else = edit instruction and we revise.\n")
+    print("You can review or refine this draft however you like.\n")
+    print("• Type 'approve' (or 'a') to accept and move on")
+    print("• Type 'skip' (or 's') to leave it unchanged")
+    print("• Or just tell me what you want changed (tone, length, wording, add/remove lines, etc.)\n")
+    print("I’m here to help.\n")
 
     while True:
         if int(state.get("revision_count", 0)) >= int(state.get("max_revisions", 3)):
@@ -248,10 +243,10 @@ def node_chat_review(state: EmailState) -> EmailState:
 
         low = msg.lower()
 
-        if low in {"a", "approve", "ok", "done"}:
+        if low in {"approve", "a", "ok", "done"}:
             state["approved"] = True
             break
-        if low in {"s", "skip"}:
+        if low in {"skip", "s"}:
             state["skipped"] = True
             state.setdefault("errors", []).append("Skipped by user.")
             break
@@ -289,10 +284,9 @@ def node_apply_feedback(state: EmailState) -> EmailState:
         f"{sig}\n"
     )
 
-    triage_result = {"department": state.get("department_id", "needs_review"), "confidence": state.get("confidence", 0.0)}
-    state["draft"] = draft_reply(revision_email, triage_result)
+    state["draft"] = draft_reply(revision_email, {"department": state.get("department_id", "needs_review")})
 
-    # hard constraint: if user says "max 150 characters" enforce it
+    # Optional hard constraint: enforce max characters if user asks
     m = re.search(r"max(?:imum)?\s*(\d{2,5})\s*char", fb.lower())
     if m:
         limit = int(m.group(1))
