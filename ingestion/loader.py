@@ -19,7 +19,31 @@ def load_emails(path: str) -> list[dict]:
         raise FileNotFoundError(f"Email data file not found: {p.resolve()}")
 
     try:
-        data: Any = json.loads(p.read_text(encoding="utf-8"))
+        # Strip // comments before parsing (allows commented-out emails to remain in file)
+        content = p.read_text(encoding="utf-8")
+        
+        # Find the last closing bracket to determine where JSON ends
+        last_bracket_pos = content.rfind(']')
+        if last_bracket_pos == -1:
+            raise ValueError("No closing bracket found in JSON file")
+        
+        # Only process content up to and including the closing bracket
+        json_content = content[:last_bracket_pos + 1]
+        
+        # Strip // comments from the JSON content
+        lines = []
+        for line in json_content.split('\n'):
+            # Remove // comments but preserve the line structure
+            if '//' in line:
+                comment_pos = line.find('//')
+                # Check if // is inside a string (basic check)
+                before_comment = line[:comment_pos]
+                if before_comment.count('"') % 2 == 0:  # Even number of quotes = // is not in string
+                    line = before_comment.rstrip()
+            lines.append(line.rstrip())
+        
+        cleaned_content = '\n'.join(lines)
+        data: Any = json.loads(cleaned_content)
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in {p.resolve()}: {e}") from e
 

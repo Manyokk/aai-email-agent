@@ -28,7 +28,7 @@ def draft_reply(email, triage_result):
     email_content = str(email)
     
     # Create prompt with proper string formatting
-    draft_prompt = f"Our Company name is TRIAG3. Create an answer to the email from the customer. Use the following Department this email is directed to: {department}"
+    draft_prompt = f"Create an answer to the email from the customer. No filler text, just the Mailcontent. Dont make filler content. Use the following Department this email is directed to: {department}. Use the department as a whole team that answers.  Our Company name is TRIAG3."
     
     messages = [
         SystemMessage(content=draft_prompt),
@@ -39,5 +39,3 @@ def draft_reply(email, triage_result):
     response = llm.invoke(messages)
     # Return plain text content from the response
     return response.content
-
-#newcode
